@@ -27,6 +27,7 @@ function exercise(pathname, hash, memory = {}, time = 1_000_000) {
         textContent:"",
         addEventListener(){},
         appendChild(){},
+        replaceChildren(){},
       };
     },
     querySelectorAll() {return [];},
