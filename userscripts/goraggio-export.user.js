@@ -138,6 +138,8 @@
         u.pathname !== "/" + shopId + "/detail" ||
         u.searchParams.get("unit") !== item.unit) throw Error("取得先URLが想定外です");
     controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, 20000);
+    try {
     var response = await fetch(u.href, {
       method: "GET", credentials: "same-origin", redirect: "follow",
       headers: { "Accept": "text/html,application/xhtml+xml" },
@@ -164,6 +166,9 @@
       unit: item.unit, model: item.model, url: u.href,
       captured_at: new Date().toISOString(), html: cleanFetchedHtml(html)
     };
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   function makeBundle(items, attemptedFrom, attemptedTo) {
