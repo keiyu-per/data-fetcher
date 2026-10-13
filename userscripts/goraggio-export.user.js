@@ -223,6 +223,27 @@
     status.textContent = "一覧HTMLの保存を試行しました。";
   }, true);
 
+  var unitSelector = document.createElement("select");
+  unitSelector.style.cssText = modelSelector.style.cssText;
+  controls.appendChild(unitSelector);
+  function updateUnitSelector() {
+    var previous = unitSelector.value;
+    unitSelector.replaceChildren();
+    selectedRows().forEach(function (r) {
+      var option = document.createElement("option");
+      option.value = r.unit;
+      option.textContent = "台番号 " + r.unit + " / " + r.model;
+      unitSelector.appendChild(option);
+    });
+    if (selectedRows().some(function (r) { return r.unit === previous; })) unitSelector.value = previous;
+  }
+  updateUnitSelector();
+  button("選択した1台をSafariで開く（手動取得用）", function () {
+    var row = rows.find(function (r) { return r.unit === unitSelector.value; });
+    if (!row) return;
+    location.assign(row.detail_url + "#df-export");
+  }, true);
+
   var runButton = button("選択機種の詳細を取得（最大20台）", function () {
     runBatch().catch(function (e) {
       status.textContent = "予期しないエラー：" + e.message;
@@ -249,6 +270,7 @@
   modelSelector.addEventListener("change", function () {
     nextIndex = 0;
     selectionKey = "";
+    updateUnitSelector();
     status.textContent = "対象：" + selectedRows().length + "台。20台ずつ取得します。";
   });
 
