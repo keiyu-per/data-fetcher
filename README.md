@@ -19,6 +19,20 @@
 
 GitHub Actionsからの直接HTTP取得は **HTTP 403** のため、通常運用には使用しません。従来の `fetch_goraggio.py` と `GORAGGIO HTML retrieval test` は診断目的で保持し、手動起動のみです。通常の品質確認は `Offline data-fetcher validation` が行います。
 
+## 画面遷移（2026-10-13更新）
+
+店舗を選択してから「店舗全体」「機種別」「台番号指定」を選択する。
+
+| モード | 遷移先 | 備考 |
+| --- | --- | --- |
+| 店舗全体 | `/{shop_id}/all_list?ps=S` | 従来の全台一覧画面。既存Userscriptsとの連携を維持 |
+| 機種別 | `/{shop_id}/list?mode=psModelNameSearch&ps=S` | 公式の「機種別で探す」画面。選択した機種の台一覧は `unit_list` に進む。**自動抽出は未対応** |
+| 台番号指定 | `/{shop_id}/detail?unit={unit}` | 半角数字1〜6桁を入力。実在する台番号かはサイト表示で確認 |
+
+画面モードの切替はGitHub Pages側のナビゲーションのみで、**モデル一覧からの一括詳細取得が成功したことを意味しない**。
+
+GORAGGIOの規約ページには、スクレイピングに関する禁止事項が記載されている。公式ページへの通常の移動と、自動収集の許可は別問題であるため、後者は必要な利用許諾を確認してから使用すること。
+
 ## 構成
 
 - `index.html` — iPhone用3店舗選択ページ
