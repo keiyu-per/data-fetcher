@@ -27,6 +27,7 @@ jobs:
         run: |
           python -m py_compile goraggio.py merge_captures.py
           node --check userscripts/goraggio-export.user.js
+          node tests/userscript_gate.test.cjs
       - name: Parser self test
         run: python goraggio.py --self-test
       - name: Offline test suite
