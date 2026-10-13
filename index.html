@@ -32,8 +32,8 @@
 <body>
 <main>
   <div class="eyebrow">GORAGGIO / DATA FETCHER</div>
-  <h1>HTMLデータ取得</h1>
-  <p class="sub">iPhoneのSafariで対象ページを開き、表示されている台データのHTMLを保存するための試作画面です。</p>
+  <h1>一覧・詳細データ取得</h1>
+  <p class="sub">Safariで表示できるGORAGGIOの一覧に加え、選択した機種の詳細ページも20台ずつ取得する試作版です。</p>
   <section class="panel">
     <div class="tag">STEP 1 / 店舗を選択</div>
     <h2>取得対象店舗</h2>
@@ -41,21 +41,21 @@
       <label class="choice"><input type="radio" name="shop" value="100831" checked><span><strong>ピーアーク北千住SSS</strong><small>GORAGGIO ID: 100831</small></span></label>
       <label class="choice"><input type="radio" name="shop" value="100983"><span><strong>コンサートホール北千住</strong><small>GORAGGIO ID: 100983</small></span></label>
       <label class="choice"><input type="radio" name="shop" value="100883"><span><strong>ピーアーク竹ノ塚スタジオ</strong><small>GORAGGIO ID: 100883</small></span></label>
-      <button type="submit">SafariでHTML取得を開始 →</button>
+      <button type="submit">Safariで一覧・詳細取得を開始 →</button>
     </form>
-    <p class="note">このボタンはGORAGGIOの通常ページを開きます。HTMLの自動保存には下の「Userscripts」設定が必要です。</p>
+    <p class="note">GORAGGIOに移動後、画面下の取得パネルで機種を選択し、「選択機種の詳細を取得」を押してください。取得後はJSONファイルとして保存できます。</p>
   </section>
   <section class="panel">
     <div class="tag">STEP 0 / 初回のみ</div>
-    <h2>Safari自動保存スクリプトの設定</h2>
+    <h2>Safari用スクリプトの設定・更新</h2>
     <ol>
       <li>無料の<a href="https://apps.apple.com/jp/app/userscripts/id1463298887" target="_blank" rel="noopener noreferrer">Userscriptsアプリ</a>をインストールする</li>
       <li>iPhoneの「設定 → アプリ → Safari → 拡張機能」でUserscriptsを有効化し、GORAGGIOへのアクセスを許可する</li>
-      <li><a href="./userscripts/goraggio-export.user.js">この専用スクリプトをSafariで開く</a>。Userscriptsの拡張機能メニューからインストールする</li>
+      <li><a href="./userscripts/goraggio-export.user.js">最新版 v0.2 専用スクリプトをSafariで開く</a>。Userscriptsの拡張機能メニューからインストールする</li>
     </ol>
-    <p class="note">全台リンク数と表示台数が一致すると、SafariでHTMLダウンロードを自動試行します。iOS側にブロックされた場合は、GORAGGIOページに表示される「現在のHTMLを保存」を押してください。</p>
+    <p class="note">v0.1をインストール済みの場合も、このリンクからv0.2へ更新してください。選択機種は20台ごとに取得します。途中で403・同意画面などが出たら処理を停止します。保存されない場合はパネル内の保存ボタンを使用してください。</p>
   </section>
-  <p class="foot">試作版 v0.1。ページを自動再取得する仕組みではなく、現在表示中のDOMを保存します。403・429・ログイン・CAPTCHA等を回避する処理はありません。保存後に既存のPython解析ツールで件数を検証してください。</p>
+  <p class="foot">試作版 v0.2。実機の詳細取得は未検証です。403・429・規約確認等は自動回避しません。iPhoneの画面を開いたまま利用し、機種詳細の取得率をPythonで検証してください。グラフ・CZ・AT初当たり等の解析可能性は詳細HTML確認後に判断します。</p>
 </main>
 <script>
 (function(){
