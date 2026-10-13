@@ -1,39 +1,43 @@
-# GORAGGIO Data Fetcher — verification stage
+# Data Fetcher — iPhone Safari向けGORAGGIO HTML取得
 
-An iPhone-first data acquisition project. The first milestone is **not** the Web app: it is verifying whether a GitHub Actions runner can retrieve a normal, publicly accessible GORAGGIO all-machine HTML page without evading access restrictions.
+**目的**：iPhoneだけで店舗と機種を選択し、GORAGGIOの台番号一覧および選択機種の各台詳細HTMLをローカルに保存・解析する。
 
-## Existing code reused
+[Webアプリ](https://keiyu-per.github.io/data-fetcher/) | [iPhoneでの詳細取得手順](DETAIL_CAPTURE.md) | [セットアップ](IPHONE_SETUP.md)
 
-- `goraggio.py` (v2.1.1): offline HTML parsing; three shops, CSV / JSON exports, coverage checks and self-test.
-- `fetch_goraggio.py`: a **new single-request** public-page fetch test. Does not log in, simulate consent, solve CAPTCHA or circumvent HTTP 403 / 429 responses.
-- `.github/workflows/goraggio-fetch.yml`: manual workflow with shop selection; initial `main` push also tests P-ARK Kitasenju SSS.
+## 現在の実装（v0.2.1）
 
-| Shop | Key | GORAGGIO ID |
-| --- | --- | --- |
-| ピーアーク北千住SSS | `p-ark-kitasenju-sss` | `100831` |
-| コンサートホール北千住 | `concert-hall-kitasenju` | `100983` |
-| ピーアーク竹ノ塚スタジオ | `p-ark-takenotsuka-studio` | `100883` |
+| 機能 | 状態 |
+| --- | --- |
+| GitHub Pagesの店舗選択UI（3店舗） | 実装済み・Safari表示確認済み |
+| Safari Userscriptsによる一覧HTML保存 | 実装済み・実機保存確認済み |
+| 全台一覧の451行解析 | 2026-10-13の実ファイルで検証済み |
+| 選択機種の詳細ページ取得（同一サイトの通常リクエスト） | 実装済み・実機未検証 |
+| 25台単位の詳細JSON保存・取得中断 | 実装済み・実機未検証 |
+| 選択1台の詳細ページ移動・手動HTML保存 | 実装済み・実機未検証 |
+| 一覧と詳細の結合CSV/JSON・欠損率集計 | 実装済み・オフライン自動テスト成功 |
+| 詳細のCZ/AT履歴・グラフ検証、設定推定 | 未実装 |
 
-IDs are reference values checked on 2026-09-03. Confirm any live shop identity before relying on its data.
+GitHub Actionsからの直接HTTP取得は **HTTP 403** のため、通常運用には使用しません。従来の `fetch_goraggio.py` と `GORAGGIO HTML retrieval test` は診断目的で保持し、手動起動のみです。通常の品質確認は `Offline data-fetcher validation` が行います。
 
-## Test from an iPhone
+## 構成
 
-Open **Actions → GORAGGIO HTML retrieval test → Run workflow**. Choose a shop and start the run. Open the run to inspect its success/failure and logs. Where available, download the `goraggio-test-results` artifact, retained 7 days.
+- `index.html` — iPhone用3店舗選択ページ
+- `userscripts/goraggio-export.user.js` — Safari上で一覧・詳細を保存するユーザースクリプト
+- `goraggio.py` — 取得済みHTMLの既存オフラインパーサー
+- `merge_captures.py` — 詳細JSON・手動保存HTMLと台番号一覧の結合、欠損レポート
+- `tests/` — 403・HTML不足・データ照合・日付抽出の自動テスト
+- `DETAIL_CAPTURE.md` — 詳細取得、Python解析、実機検証の手順
 
-- `fetch_status.json`: HTTP status, fetch time (UTC), parser result, row counts and diagnostics.
-- `all_list.html`: the server's HTML response *only if an ordinary request succeeds*; the response might still lack machine data.
-- `all_machines.csv` and `.json`: created only if the response contains parseable machine rows and the parser runs.
+## 対応店舗（GORAGGIO ID）
 
-### Local tests
+- ピーアーク北千住SSS：`100831`
+- コンサートホール北千住：`100983`
+- ピーアーク竹ノ塚スタジオ：`100883`
 
-```bash
-python goraggio.py --self-test
-python -m unittest discover -s tests -v
-python fetch_goraggio.py --shop p-ark-kitasenju-sss --output-dir output
-```
+## 設計上の安全性と制約
 
-`HTTP 403`, `HTTP 429`, CAPTCHA and consent pages are **not** evidence of successful acquisition. The status file distinguishes these from usable all-machine data. No credential or cookie should be committed.
+利用規約確認や認証を自動化せず、403/429・同意ページ・予期しないレスポンスでは取得を停止します。25台ずつ、最低約2秒の間隔で取得を試みます。iOSでは非アクティブ中の処理や自動ダウンロードが制限されることがあります。
 
-## Planned architecture (not yet implemented)
+HTML内の機種・回数・台番号が取得できることと、設定判別に必要な履歴・グラフ・CZ等が得られることは**別問題**です。詳細の生HTMLが取れた後に、抽出可能な項目を個別検証します。抽出されていない数値は推測で補いません。
 
-iPhone Web UI (GitHub Pages) → authenticated backend/job trigger → fetcher → validated HTML → offline parser → downloadable artifact. A public GitHub Pages client must **not** embed GitHub credentials. Download-on-one-tap is not implemented yet; choose a secure way to trigger and retrieve files after the acquisition test succeeds.
+ダウンロードJSONや生HTMLは公開GitHubリポジトリにコミットしないでください。
