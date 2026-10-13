@@ -18,7 +18,7 @@
   };
   // Entry is explicitly initiated by the user from Data Fetcher. Preserve intent
   // through the site's own page links even when their navigation drops the hash.
-  var matched = /^\\/(100831|100883|100983)\\/(all_list|detail|list|unit_list)\\/?$/.exec(location.pathname);
+  var matched = new RegExp("^/(100831|100883|100983)/(all_list|detail|list|unit_list)/?$").exec(location.pathname);
   if (!matched) return;
   var shopId = matched[1];
   var mode = matched[2];
