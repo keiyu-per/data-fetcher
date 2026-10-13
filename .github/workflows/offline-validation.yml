@@ -1,0 +1,33 @@
+name: Offline data-fetcher validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'goraggio.py'
+      - 'merge_captures.py'
+      - 'userscripts/**'
+      - 'tests/**'
+      - '.github/workflows/offline-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check syntax
+        run: |
+          python -m py_compile goraggio.py merge_captures.py
+          node --check userscripts/goraggio-export.user.js
+      - name: Parser self test
+        run: python goraggio.py --self-test
+      - name: Offline test suite
+        run: python -m unittest discover -s tests -v
