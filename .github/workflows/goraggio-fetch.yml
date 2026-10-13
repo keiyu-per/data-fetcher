@@ -12,14 +12,6 @@ on:
           - p-ark-kitasenju-sss
           - concert-hall-kitasenju
           - p-ark-takenotsuka-studio
-  push:
-    branches:
-      - main
-    paths:
-      - 'goraggio.py'
-      - 'fetch_goraggio.py'
-      - '.github/workflows/goraggio-fetch.yml'
-      - 'tests/**'
 
 permissions:
   contents: read
