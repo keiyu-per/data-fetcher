@@ -11,6 +11,12 @@ on:
       - 'tests/**'
       - '.github/workflows/offline-validation.yml'
 
+# Keep only the newest validation for rapid successive pushes on the same branch.
+# This does not suppress failures from the latest commit.
+concurrency:
+  group: offline-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
