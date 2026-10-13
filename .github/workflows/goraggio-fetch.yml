@@ -1,0 +1,61 @@
+name: GORAGGIO HTML retrieval test
+
+on:
+  workflow_dispatch:
+    inputs:
+      shop:
+        description: 'Choose a shop'
+        required: true
+        type: choice
+        default: p-ark-kitasenju-sss
+        options:
+          - p-ark-kitasenju-sss
+          - concert-hall-kitasenju
+          - p-ark-takenotsuka-studio
+  push:
+    branches:
+      - main
+    paths:
+      - 'goraggio.py'
+      - 'fetch_goraggio.py'
+      - '.github/workflows/goraggio-fetch.yml'
+      - 'tests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate parser and fetcher locally
+        run: |
+          python goraggio.py --self-test
+          python -m unittest discover -s tests -v
+      - name: Try public HTML retrieval (one HTTP request)
+        env:
+          SHOP: ${{ inputs.shop || 'p-ark-kitasenju-sss' }}
+        run: python fetch_goraggio.py --shop "$SHOP" --output-dir output
+      - name: Parse received HTML to CSV and JSON
+        if: success()
+        env:
+          SHOP: ${{ inputs.shop || 'p-ark-kitasenju-sss' }}
+        run: |
+          python goraggio.py all --shop "$SHOP" --no-shop-prompt \
+            --list-html output/all_list.html \
+            --csv output/all_machines.csv \
+            --json output/all_machines.json \
+            --strict
+      - name: Upload results and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: goraggio-test-results
+          path: output/
+          if-no-files-found: warn
+          retention-days: 7
