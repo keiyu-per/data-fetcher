@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GORAGGIO iPhone HTML Export
 // @namespace    https://github.com/keiyu-per/data-fetcher
-// @version      0.2.0
+// @version      0.2.1
 // @description  Save displayed lists and retrieve selected machine detail HTML in Safari
 // @match        https://daidata.goraggio.com/*
 // @run-at       document-idle
@@ -20,7 +20,7 @@
   if (!matched || !location.hash.startsWith("#df-export")) return;
   var shopId = matched[1];
   var mode = matched[2];
-  var BATCH_SIZE = 20;
+  var BATCH_SIZE = 25;
   var INTERVAL_MS = 2000;
   var stopped = false;
   var working = false;
@@ -195,7 +195,7 @@
   modelSelector.style.cssText = "width:100%;padding:12px;background:#1b2b41;color:#fff;border:1px solid #5d7893;border-radius:9px;font-size:15px;margin-bottom:6px";
   var allOption = document.createElement("option");
   allOption.value = "__all__";
-  allOption.textContent = "全機種（20台ごとに保存）";
+  allOption.textContent = "全機種（25台ごとに保存）";
   modelSelector.appendChild(allOption);
   var modelCounts = {};
   rows.forEach(function (r) {
@@ -244,7 +244,7 @@
     location.assign(row.detail_url + "#df-export");
   }, true);
 
-  var runButton = button("選択機種の詳細を取得（最大20台）", function () {
+  var runButton = button("選択機種の詳細を取得（最大25台）", function () {
     runBatch().catch(function (e) {
       status.textContent = "予期しないエラー：" + e.message;
       working = false;
@@ -271,7 +271,7 @@
     nextIndex = 0;
     selectionKey = "";
     updateUnitSelector();
-    status.textContent = "対象：" + selectedRows().length + "台。20台ずつ取得します。";
+    status.textContent = "対象：" + selectedRows().length + "台。25台ずつ取得します。";
   });
 
   async function runBatch() {
@@ -326,14 +326,14 @@
       modelSelector.disabled = false;
       runButton.disabled = false;
       stopButton.disabled = true;
-      downloadButton.disabled = bundle.details.length === 0;
+      downloadButton.disabled = bundle.details.length === 0 && bundle.errors.length === 0;
       if (!stopped) {
         status.textContent = "詳細 " + bundle.details.length + "台取得。" +
-          (nextIndex < selected.length ? " 次の20台に進むにはもう一度取得ボタンを押してください。" :
+          (nextIndex < selected.length ? " 次の25台に進むにはもう一度取得ボタンを押してください。" :
             " 選択した台の取得が完了しました。") +
           " 下の保存ボタンを押してください。";
       }
-      if (bundle.details.length) {
+      if (bundle.details.length || bundle.errors.length) {
         // Automatic downloads may be blocked by Safari after an awaited request.
         // Always leave the explicit download button enabled.
         try {
