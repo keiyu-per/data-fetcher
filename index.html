@@ -27,13 +27,18 @@
     a{color:#7cdeff;text-decoration:underline;text-underline-offset:3px}
     .foot{color:var(--muted);font-size:12px;line-height:1.7}
     .tag{display:inline-block;padding:3px 8px;border:1px solid #34526a;border-radius:30px;color:var(--muted);font-size:11px;margin-bottom:12px}
+    .small-heading{font-weight:700;margin:22px 0 10px}
+    .unit-field{margin:14px 0}
+    .unit-field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    .unit-field input{width:100%;padding:12px;border:1px solid #365066;border-radius:11px;background:#101a2b;color:var(--text);font-size:17px}
+    .hidden{display:none}
   </style>
 </head>
 <body>
 <main>
   <div class="eyebrow">GORAGGIO / DATA FETCHER</div>
-  <h1>一覧・詳細データ取得</h1>
-  <p class="sub">Safariで表示できるGORAGGIOの一覧に加え、選択した機種の詳細ページも20台ずつ取得する試作版です。</p>
+  <h1>台データを確認</h1>
+  <p class="sub">店舗全体・機種別・指定台の3通りから、GORAGGIOの対象ページに進めます。</p>
   <section class="panel">
     <div class="tag">STEP 1 / 店舗を選択</div>
     <h2>取得対象店舗</h2>
@@ -41,9 +46,17 @@
       <label class="choice"><input type="radio" name="shop" value="100831" checked><span><strong>ピーアーク北千住SSS</strong><small>GORAGGIO ID: 100831</small></span></label>
       <label class="choice"><input type="radio" name="shop" value="100983"><span><strong>コンサートホール北千住</strong><small>GORAGGIO ID: 100983</small></span></label>
       <label class="choice"><input type="radio" name="shop" value="100883"><span><strong>ピーアーク竹ノ塚スタジオ</strong><small>GORAGGIO ID: 100883</small></span></label>
-      <button type="submit">Safariで一覧・詳細取得を開始 →</button>
+      <h3 class="small-heading">何を確認しますか？</h3>
+      <label class="choice"><input type="radio" name="view" value="all" checked><span><strong>店舗全体を見る</strong><small>当日の全台一覧 / 全体の傾向を把握</small></span></label>
+      <label class="choice"><input type="radio" name="view" value="model"><span><strong>機種別に見る</strong><small>公式の機種別一覧で機種を選択</small></span></label>
+      <label class="choice"><input type="radio" name="view" value="unit"><span><strong>台番号を指定して見る</strong><small>着席した台の詳細ページを開く</small></span></label>
+      <div class="unit-field hidden" id="unit-field">
+        <label for="unit-number">台番号（半角数字）</label>
+        <input id="unit-number" name="unit" type="text" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" placeholder="例：732">
+      </div>
+      <button id="open-button" type="submit">店舗全体の一覧を開く →</button>
     </form>
-    <p class="note">GORAGGIOに移動後、画面下の取得パネルで機種を選択し、「選択機種の詳細を取得」を押してください。取得後はJSONファイルとして保存できます。</p>
+    <p class="note" id="view-note">現在の全台一覧保存機能も引き続き利用できます。ページを開いた後の取得操作については、サイトの利用条件に従ってください。</p>
   </section>
   <section class="panel">
     <div class="tag">STEP 0 / 初回のみ</div>
@@ -55,18 +68,48 @@
     </ol>
     <p class="note">v0.1をインストール済みの場合も、このリンクからv0.2.1へ更新してください。選択機種は25台ごとに取得します。途中で403・同意画面などが出たら処理を停止します。保存されない場合はパネル内の保存ボタンを使用してください。</p>
   </section>
-  <p class="foot">試作版 v0.2.1。実機の詳細取得は未検証です。403・429・規約確認等は自動回避しません。iPhoneの画面を開いたまま利用し、機種詳細の取得率をPythonで検証してください。グラフ・CZ・AT初当たり等の解析可能性は詳細HTML確認後に判断します。</p>
+  <p class="foot">ナビゲーション更新版。機種別画面からの取得処理は未実装です。既存の詳細自動取得は実機未検証です。403・429・規約確認等は自動回避しません。iPhoneの画面を開いたまま利用し、機種詳細の取得率をPythonで検証してください。グラフ・CZ・AT初当たり等の解析可能性は詳細HTML確認後に判断します。</p>
 </main>
 <script>
 (function(){
   "use strict";
-  document.getElementById("shop-form").addEventListener("submit",function(event){
+  var form=document.getElementById("shop-form");
+  var numberField=document.getElementById("unit-field");
+  var unitNumber=document.getElementById("unit-number");
+  var openButton=document.getElementById("open-button");
+  var note=document.getElementById("view-note");
+  var modes={
+    all:{label:"店舗全体の一覧を開く →",note:"従来の全台一覧ページを開きます。保存機能はSafari用スクリプトが有効な場合に表示されます。"},
+    model:{label:"公式の機種別一覧を開く →",note:"機種別一覧に移動します。機種を選ぶと機種の台番号一覧へ進めます。自動取得機能とは別です。"},
+    unit:{label:"指定した台の詳細ページを開く →",note:"入力した台番号の詳細ページに移動します。台番号が存在することは移動先で確認してください。"}
+  };
+  function updateMode(){
+    var mode=document.querySelector('input[name="view"]:checked').value;
+    numberField.classList.toggle("hidden",mode!=="unit");
+    unitNumber.required=mode==="unit";
+    openButton.textContent=modes[mode].label;
+    note.textContent=modes[mode].note;
+  }
+  form.addEventListener("change",updateMode);
+  form.addEventListener("submit",function(event){
     event.preventDefault();
     var selected=document.querySelector('input[name="shop"]:checked');
+    var mode=document.querySelector('input[name="view"]:checked').value;
     if(!selected)return;
-    // Hash flags the export request without altering the HTTP request path.
-    location.assign("https://daidata.goraggio.com/"+selected.value+"/all_list?ps=S#df-export");
+    var base="https://daidata.goraggio.com/"+selected.value+"/";
+    if(mode==="all"){
+      location.assign(base+"all_list?ps=S#df-export");
+    }else if(mode==="model"){
+      // Official model-selection page; no query assumptions about particular models.
+      location.assign(base+"list?mode=psModelNameSearch&ps=S");
+    }else if(mode==="unit"){
+      var unit=unitNumber.value.trim();
+      if(!/^[0-9]{1,6}$/.test(unit)){unitNumber.reportValidity();return;}
+      // User-initiated navigation to a known standard detail URL.
+      location.assign(base+"detail?unit="+encodeURIComponent(unit)+"#df-export");
+    }
   });
+  updateMode();
 })();
 </script>
 </body>
