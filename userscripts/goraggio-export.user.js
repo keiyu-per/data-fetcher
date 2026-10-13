@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GORAGGIO iPhone HTML Export
 // @namespace    https://github.com/keiyu-per/data-fetcher
-// @version      0.2.1
+// @version      0.2.2
 // @description  Save displayed lists and retrieve selected machine detail HTML in Safari
 // @match        https://daidata.goraggio.com/*
 // @run-at       document-idle
@@ -16,10 +16,31 @@
     "100883": "ピーアーク竹ノ塚スタジオ",
     "100983": "コンサートホール北千住"
   };
-  var matched = /^\/(100831|100883|100983)\/(all_list|detail)\/?$/.exec(location.pathname);
-  if (!matched || !location.hash.startsWith("#df-export")) return;
+  // Entry is explicitly initiated by the user from Data Fetcher. Preserve intent
+  // through the site's own page links even when their navigation drops the hash.
+  var matched = /^\\/(100831|100883|100983)\\/(all_list|detail|list|unit_list)\\/?$/.exec(location.pathname);
+  if (!matched) return;
   var shopId = matched[1];
   var mode = matched[2];
+  var intentKey = "data-fetcher-export-intent-v1";
+  var now = Date.now();
+  var explicit = location.hash.startsWith("#df-export");
+  var active = false;
+  try {
+    if (explicit) {
+      sessionStorage.setItem(intentKey, JSON.stringify({ shopId: shopId, at: now }));
+      active = true;
+    } else {
+      var previous = JSON.parse(sessionStorage.getItem(intentKey) || "null");
+      active = !!(previous && previous.shopId === shopId &&
+        typeof previous.at === "number" && now - previous.at >= 0 &&
+        now - previous.at < 15 * 60 * 1000);
+    }
+  } catch (_) {
+    // Safari privacy restrictions can disable sessionStorage. Hash navigation still works.
+    active = explicit;
+  }
+  if (!active) return;
   var BATCH_SIZE = 25;
   var INTERVAL_MS = 2000;
   var stopped = false;
@@ -33,7 +54,7 @@
   panel.id = "data-fetcher-panel";
   panel.style.cssText = "position:fixed;z-index:2147483646;left:10px;right:10px;bottom:10px;max-width:560px;margin:auto;padding:16px;max-height:72vh;overflow:auto;border-radius:14px;background:#101827;color:#f7faff;font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 6px 28px #0009;border:1px solid #3b536b";
   panel.innerHTML =
-    '<div style="font-weight:800;font-size:17px">GORAGGIO HTML取得 v0.2</div>' +
+    '<div style="font-weight:800;font-size:17px">GORAGGIO HTML取得 v0.2.2</div>' +
     '<div id="df-status" style="margin:8px 0 12px" aria-live="polite">読み込み中…</div>' +
     '<div id="df-controls"></div>' +
     '<button id="df-close" type="button" style="margin-top:10px;background:none;border:0;color:#cfdae8;padding:8px">閉じる</button>';
@@ -181,6 +202,18 @@
       batch_start: attemptedFrom, batch_end: attemptedTo,
       details: [], errors: []
     };
+  }
+
+  if (mode === "list" || mode === "unit_list") {
+    status.textContent = shopNames[shopId] + " / " +
+      (mode === "list" ? "機種選択" : "機種別台一覧") +
+      "。閲覧中のページを保存できます。機種選択などの操作後も同じタブで表示します。";
+    button("現在表示中のページHTMLを保存", function () {
+      download(snapshot(), "goraggio_" + shopId + "_" + mode + "_" +
+        dateString() + ".html", "text/html;charset=utf-8");
+      status.textContent = "保存を試行しました。Safariのダウンロード一覧を確認してください。";
+    });
+    return;
   }
 
   if (mode === "detail") {
