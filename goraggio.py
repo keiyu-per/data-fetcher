@@ -477,7 +477,9 @@ def parse_detail_html(
 
     date = find_value(pairs, ["対象日", "日付", "営業日"])
     if date is None:
-        match = re.search(r"(?:20\d{2}[./-])?\d{1,2}[./-]\d{1,2}", text)
+        # Prefer visible page timestamps over arbitrary numbers in ad scripts.
+        candidate = current_timestamp(text) or text
+        match = re.search(r"20\d{2}[./-]\d{1,2}[./-]\d{1,2}", candidate)
         date = match.group(0) if match else None
     updated_at = find_value(pairs, ["更新日時", "データ更新日時", "更新時刻"])
     if updated_at is None:
@@ -658,7 +660,22 @@ def parse_list_html(
         record = record_from_context(context, unit, href)
         records[unit] = merge_record(records.get(unit, {}), record)
 
-    date_match = re.search(r"(?:20\d{2}[./-])?\d{1,2}[./-]\d{1,2}", text)
+    # Prefer an explicit date selected in the list's "hist_num" dropdown.
+    # Fallback to the on-page update timestamp, not arbitrary numbers in scripts.
+    selected_date = None
+    for select in root.descendants({"select"}):
+        if select.attrs.get("name") != "hist_num":
+            continue
+        for option in select.descendants({"option"}):
+            if "selected" in option.attrs:
+                candidate = re.search(r"20\d{2}[./-]\d{1,2}[./-]\d{1,2}", option.text())
+                if candidate:
+                    selected_date = candidate.group(0)
+                    break
+        if selected_date:
+            break
+    date_match = re.search(r"20\d{2}[./-]\d{1,2}[./-]\d{1,2}",
+                           current_timestamp(text) or "")
     update_match = re.search(
         r"(?:データ)?更新(?:日時|時刻)?\s*[:：]?\s*((?:20\d{2}[./-])?\d{1,2}[./-]\d{1,2}\s+\d{1,2}:\d{2}|\d{1,2}:\d{2})",
         text,
@@ -687,7 +704,7 @@ def parse_list_html(
         "shop_id": str(shop_id),
         "source": source,
         "page_state": page_state,
-        "date": date_match.group(0) if date_match else None,
+        "date": selected_date or (date_match.group(0) if date_match else None),
         "updated_at": update_match.group(1) if update_match else current_timestamp(text),
         "expected_count": resolved_expected_count,
         "expected_count_source": count_source,
