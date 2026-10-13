@@ -138,12 +138,10 @@ def parse_capture_files(
     for path in extra_detail_paths or []:
         content = load_html(path)
         root = parse_dom(content)
-        unit = detail_unit_from_root(root)
-        if not unit or unit not in list_units:
-            # A saved detail page may lack a self-link. Use a clear file name instead.
-            import re
-            matched = re.search(r"(?:unit_|detail_)(\d+)", path.stem)
-            unit = matched.group(1) if matched else None
+        # The page may contain links to *other* units. Prefer the exported filename.
+        import re
+        matched = re.search(r"(?:unit_|detail_)(\d+)", path.stem)
+        unit = matched.group(1) if matched else detail_unit_from_root(root)
         if not unit or unit not in list_units:
             warnings.append(f"Skipped detail HTML with unknown unit: {path.name}")
             continue
