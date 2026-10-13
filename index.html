@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d18">
+  <title>Data Fetcher | GORAGGIO HTML取得</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080d18;--card:#131d2c;--line:#29465b;--text:#eff8ff;--muted:#a1b6c8;--accent:#41efbf}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% -8%,#173b4b 0,transparent 45%),var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;color:var(--text)}
+    main{width:min(560px,100%);margin:0 auto;padding:calc(30px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom))}
+    .eyebrow{font-size:12px;letter-spacing:.22em;color:var(--accent);font-weight:800}
+    h1{font-size:30px;letter-spacing:-.04em;margin:6px 0 10px}
+    .sub{color:var(--muted);font-size:14px;line-height:1.65;margin:0 0 28px}
+    .panel{border:1px solid var(--line);background:var(--card);padding:20px;border-radius:18px;margin-bottom:18px}
+    h2{font-size:17px;margin:0 0 15px}
+    .choice{display:flex;align-items:center;gap:12px;min-height:62px;border:1px solid #365066;border-radius:11px;padding:10px 14px;margin:10px 0;cursor:pointer;background:#101a2b}
+    .choice:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+    .choice input{accent-color:var(--accent);width:18px;height:18px;flex:none}
+    .choice strong{font-size:14px;display:block}
+    .choice small{font-size:12px;color:var(--muted)}
+    button{width:100%;padding:16px;border:0;border-radius:12px;background:var(--accent);color:#062b24;font-size:16px;font-weight:800;cursor:pointer}
+    button:active{transform:scale(.99)}
+    .note{font-size:13px;line-height:1.8;color:var(--muted);margin:12px 0 0}
+    ol{font-size:14px;line-height:1.9;padding-left:22px}
+    a{color:#7cdeff;text-decoration:underline;text-underline-offset:3px}
+    .foot{color:var(--muted);font-size:12px;line-height:1.7}
+    .tag{display:inline-block;padding:3px 8px;border:1px solid #34526a;border-radius:30px;color:var(--muted);font-size:11px;margin-bottom:12px}
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">GORAGGIO / DATA FETCHER</div>
+  <h1>HTMLデータ取得</h1>
+  <p class="sub">iPhoneのSafariで対象ページを開き、表示されている台データのHTMLを保存するための試作画面です。</p>
+  <section class="panel">
+    <div class="tag">STEP 1 / 店舗を選択</div>
+    <h2>取得対象店舗</h2>
+    <form id="shop-form">
+      <label class="choice"><input type="radio" name="shop" value="100831" checked><span><strong>ピーアーク北千住SSS</strong><small>GORAGGIO ID: 100831</small></span></label>
+      <label class="choice"><input type="radio" name="shop" value="100983"><span><strong>コンサートホール北千住</strong><small>GORAGGIO ID: 100983</small></span></label>
+      <label class="choice"><input type="radio" name="shop" value="100883"><span><strong>ピーアーク竹ノ塚スタジオ</strong><small>GORAGGIO ID: 100883</small></span></label>
+      <button type="submit">SafariでHTML取得を開始 →</button>
+    </form>
+    <p class="note">このボタンはGORAGGIOの通常ページを開きます。HTMLの自動保存には下の「Userscripts」設定が必要です。</p>
+  </section>
+  <section class="panel">
+    <div class="tag">STEP 0 / 初回のみ</div>
+    <h2>Safari自動保存スクリプトの設定</h2>
+    <ol>
+      <li>無料の<a href="https://apps.apple.com/jp/app/userscripts/id1463298887" target="_blank" rel="noopener noreferrer">Userscriptsアプリ</a>をインストールする</li>
+      <li>iPhoneの「設定 → アプリ → Safari → 拡張機能」でUserscriptsを有効化し、GORAGGIOへのアクセスを許可する</li>
+      <li><a href="./userscripts/goraggio-export.user.js">この専用スクリプトをSafariで開く</a>。Userscriptsの拡張機能メニューからインストールする</li>
+    </ol>
+    <p class="note">全台リンク数と表示台数が一致すると、SafariでHTMLダウンロードを自動試行します。iOS側にブロックされた場合は、GORAGGIOページに表示される「現在のHTMLを保存」を押してください。</p>
+  </section>
+  <p class="foot">試作版 v0.1。ページを自動再取得する仕組みではなく、現在表示中のDOMを保存します。403・429・ログイン・CAPTCHA等を回避する処理はありません。保存後に既存のPython解析ツールで件数を検証してください。</p>
+</main>
+<script>
+(function(){
+  "use strict";
+  document.getElementById("shop-form").addEventListener("submit",function(event){
+    event.preventDefault();
+    var selected=document.querySelector('input[name="shop"]:checked');
+    if(!selected)return;
+    // Hash flags the export request without altering the HTTP request path.
+    location.assign("https://daidata.goraggio.com/"+selected.value+"/all_list?ps=S#df-export");
+  });
+})();
+</script>
+</body>
+</html>
